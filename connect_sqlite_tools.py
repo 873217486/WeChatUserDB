@@ -19,10 +19,8 @@ import sys
 from subprocess import Popen, PIPE
 
 
-
-
 def get_exe_file():
-    exe_file =  os.getcwd()+"\\windows_sqlite_tools\\sqlcipher-shell64.exe"
+    exe_file = os.getcwd() + "\\windows_sqlite_tools\\sqlcipher-shell64.exe"
     return exe_file
 
 
@@ -58,21 +56,31 @@ def decrypt_sqlite_file(db_file="", secret_key=""):
 
     if not secret_key:
         raise ValueError("secret_key is not defined！")
+
+    if "WIN_WECHAT_DB" not in os.listdir():
+        os.mkdir("WIN_WECHAT_DB")
+    if "DECRYPT_WIN_WECHAT_DB" not in os.listdir():
+        os.mkdir("DECRYPT_WIN_WECHAT_DB")
+
+    shutil.copyfile(db_file, "WIN_WECHAT_DB\\copy_" + os.path.basename(db_file))
+    db_file = "WIN_WECHAT_DB\\copy_" + os.path.basename(db_file)
+
     salt = open(db_file, 'rb').read(16)
     dk = hashlib.pbkdf2_hmac('sha1', secret_key, salt, 64000, dklen=32)
     exe_cmd = "%s %s" % (get_exe_file(), db_file)
     p2 = Popen(exe_cmd, stdout=PIPE, stdin=PIPE, stderr=PIPE, shell=True)
-    cmd_sql = '''PRAGMA key = "x'%s'";PRAGMA cipher_page_size=4096; ATTACH DATABASE 'decrypt_%s' AS plaintext KEY ''; SELECT sqlcipher_export('plaintext'); DETACH DATABASE plaintext;''' % (binascii.hexlify(dk).decode(),os.path.basename(db_file))
+    cmd_sql = '''PRAGMA key = "x'%s'";PRAGMA cipher_page_size=4096; ATTACH DATABASE 'decrypt_%s' AS plaintext KEY ''; SELECT sqlcipher_export('plaintext'); DETACH DATABASE plaintext;''' % (
+    binascii.hexlify(dk).decode(), os.path.basename(db_file))
 
     code, message = p2.communicate(bytes(cmd_sql, encoding='utf-8'))
 
-
-    if message!=b'':
+    if message != b'':
         print("数据库" + os.path.basename(db_file) + "解密失败！！！")
+        print(message)
         os.remove("decrypt_" + os.path.basename(db_file))
         return
 
-    print("数据库" + os.path.basename(db_file) + "解密成功")
+    print("\n数据库" + os.path.basename(db_file) + "解密成功\n")
     message = message.decode("gbk")
     shutil.copyfile("decrypt_" + os.path.basename(db_file),
                     "DECRYPT_WIN_WECHAT_DB/" + "decrypt_" + os.path.basename(db_file))

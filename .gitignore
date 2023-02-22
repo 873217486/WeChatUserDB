@@ -1,3 +1,7 @@
 .idea/
 venv/
 __pycache__/
+/WIN_WECHAT_DB
+/DECRYPT_WIN_WECHAT_DB
+/build
+/dist

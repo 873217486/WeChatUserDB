@@ -10,8 +10,6 @@ import hashlib
 import base64
 import sys
 
-
-
 import binascii
 
 
@@ -28,7 +26,6 @@ def getCBytes(password) -> str:
 
 
 def pattern_scan_all(handle, pattern, *, return_multiple=False):
-
     from pymem.pattern import scan_pattern_page
     next_region = 0
 
@@ -55,7 +52,7 @@ def pattern_scan_all(handle, pattern, *, return_multiple=False):
 
 
 # getuserinfo
-def getuserinfo(p) -> (int, str):
+def getuserinfo(p, log=1) -> (int, str):
     import pymem
 
     # The address of the wechatwin.dll loaded by this process
@@ -101,8 +98,6 @@ def getuserinfo(p) -> (int, str):
     SqliteKey = p.read_bytes(base_address - 0x90, int_SqliteKey_len)
     cc = p.read_bytes(p.read_int(base_address - 0x90), int_SqliteKey_len)
 
-
-
     # Get_Public_Key
     int_PublicKey_len = p.read_int(base_address + 0x10)
     PublicKey = p.read_bytes(p.read_int(base_address), int_PublicKey_len)
@@ -116,28 +111,32 @@ def getuserinfo(p) -> (int, str):
     PrivateKey = PrivateKey.decode()
     PrivateKey = PrivateKey.replace("\n", "")
 
-    print(f"""
-            WeChatWin.Dll的基地址为: {base_address}
-            用户微信名称为：{username.decode()}
-            用户微信ID为：{wxid.decode()}
-            用户手机号为：{Tel.decode()}
-            用户公钥为：{PublicKey}
-            用户私钥为：{PrivateKey}
-            BASE64密码:{base64.b64encode(cc).decode('ascii')}
-            解密ChatMsg.db的C语言格式密码: {getCBytes(str(binascii.b2a_hex(cc)))}
-                Enjoy Python!  
-                    By: x1hy9
+    b64 = base64.b64encode(cc).decode('ascii')
+    if log:
+        print(f"""
+                WeChatWin.Dll的基地址为: {base_address}
+                用户微信名称为：{username.decode()}
+                用户微信ID为：{wxid.decode()}
+                用户手机号为：{Tel.decode()}
+                用户公钥为：{PublicKey}
+                用户私钥为：{PrivateKey}
+                BASE64密码:{b64}
+                解密ChatMsg.db的C语言格式密码: {getCBytes(str(binascii.b2a_hex(cc)))}
+                    Enjoy Python!  
+                        By: x1hy9
+    
+            """)
+    return b64, wxid.decode()
 
-        """)
 
-def get_key():
+def get_key(log=1):
     import pymem
 
     p = pymem.Pymem()
     p.open_process_from_name("WeChat.exe")
-    getuserinfo(p)
+    return getuserinfo(p, log)
 
-#if __name__ == '__main__':
- #   p = pymem.Pymem()
-  #  p.open_process_from_name("WeChat.exe")
-   # getuserinfo(p)
+# if __name__ == '__main__':
+#   p = pymem.Pymem()
+#  p.open_process_from_name("WeChat.exe")
+# getuserinfo(p)
